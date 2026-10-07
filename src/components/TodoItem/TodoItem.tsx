@@ -1,9 +1,9 @@
 import { Edit, Save, Trash, X } from 'lucide-react'
-import { useState, type KeyboardEvent } from 'react'
+import { memo, useState, type KeyboardEvent } from 'react'
 import { useTodos } from '../../context/useTodos'
 import type { ITodoProps } from './props'
 
-export const TodoItem = ({ todo }: ITodoProps) => {
+export const TodoItem = memo(({ todo }: ITodoProps) => {
 	const { toggleTodo, deleteTodo, editTodo } = useTodos()
 	const [inputValue, setInputValue] = useState<string>(todo.title)
 	const [isEditing, setIsEditing] = useState<boolean>(false)
@@ -115,4 +115,4 @@ export const TodoItem = ({ todo }: ITodoProps) => {
 			)}
 		</li>
 	)
-}
+})

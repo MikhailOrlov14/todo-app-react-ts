@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useMemo, useState, type SubmitEvent } from 'react'
 import type { ITodoContext, ITodoContextProvider, TFilter } from '.'
 import type { ITodo, TTodoId } from '../components/TodoItem/props'
 import { mockTodos } from '../data/mockTodos'
@@ -9,46 +9,53 @@ export const TodoContextProvider = ({ children }: ITodoContextProvider) => {
 	const [todos, setTodos] = useLocalStorage<ITodo[]>('todos', mockTodos)
 	const [filter, setFilter] = useState<TFilter>('all')
 
-	const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-		e.preventDefault()
+	const onSubmit = useCallback(
+		(e: SubmitEvent<HTMLFormElement>) => {
+			e.preventDefault()
+			const form = e.currentTarget
+			const input = form.elements.namedItem('title') as HTMLInputElement
+			const todoTitle = input.value.trim()
+			if (!todoTitle) return
 
-		const form = e.currentTarget
-		const input = form.elements.namedItem('title') as HTMLInputElement
-		const todoTitle = input.value.trim()
+			setTodos(prev => [
+				{
+					id: crypto.randomUUID(),
+					title: todoTitle,
+					isActive: true
+				},
+				...prev
+			])
 
-		if (!todoTitle.trim()) return
+			form.reset()
+			input.focus()
+		},
+		[setTodos]
+	)
 
-		const newTodo: ITodo = {
-			id: String(crypto.randomUUID()),
-			title: todoTitle,
-			isActive: true
-		}
-
-		setTodos(prev => [newTodo, ...prev])
-
-		form.reset()
-		input.focus()
-	}
-
-	const toggleTodo = (todoId: TTodoId) => {
-		setTodos(prev =>
-			prev.map(todo =>
-				todo.id === todoId ? { ...todo, isActive: !todo.isActive } : todo
+	const toggleTodo = useCallback(
+		(todoId: TTodoId) => {
+			setTodos(prev =>
+				prev.map(t => (t.id === todoId ? { ...t, isActive: !t.isActive } : t))
 			)
-		)
-	}
+		},
+		[setTodos]
+	)
 
-	const deleteTodo = (todoId: TTodoId) => {
-		setTodos(prev => prev.filter(todo => todo.id !== todoId))
-	}
+	const deleteTodo = useCallback(
+		(todoId: TTodoId) => {
+			setTodos(prev => prev.filter(t => t.id !== todoId))
+		},
+		[setTodos]
+	)
 
-	const editTodo = (todoId: TTodoId, newTitle: string) => {
-		setTodos(prev =>
-			prev.map(todo =>
-				todo.id === todoId ? { ...todo, title: newTitle } : todo
+	const editTodo = useCallback(
+		(todoId: TTodoId, newTitle: string) => {
+			setTodos(prev =>
+				prev.map(t => (t.id === todoId ? { ...t, title: newTitle } : t))
 			)
-		)
-	}
+		},
+		[setTodos]
+	)
 
 	const visibleTodos = useMemo(() => {
 		switch (filter) {
@@ -61,16 +68,37 @@ export const TodoContextProvider = ({ children }: ITodoContextProvider) => {
 		}
 	}, [todos, filter])
 
-	const value: ITodoContext = {
-		todos,
-		toggleTodo,
-		deleteTodo,
-		filter,
-		setFilter,
-		visibleTodos,
-		onSubmit,
-		editTodo
-	}
+	const todosQuantity = useMemo(() => {
+		return {
+			all: todos.length,
+			active: todos.filter(t => t.isActive).length,
+			completed: todos.filter(t => !t.isActive).length
+		}
+	}, [todos])
+
+	const value = useMemo<ITodoContext>(
+		() => ({
+			todos,
+			toggleTodo,
+			deleteTodo,
+			filter,
+			setFilter,
+			visibleTodos,
+			todosQuantity,
+			onSubmit,
+			editTodo
+		}),
+		[
+			todos,
+			toggleTodo,
+			deleteTodo,
+			filter,
+			visibleTodos,
+			todosQuantity,
+			onSubmit,
+			editTodo
+		]
+	)
 
 	return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>
 }

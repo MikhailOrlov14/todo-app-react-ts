@@ -1,7 +1,11 @@
 import { useTodos } from '../../context/useTodos'
 import type { IFilterButtonProps } from './props'
 
-export const FilterButton = ({ text, filterValue }: IFilterButtonProps) => {
+export const FilterButton = ({
+	text,
+	filterValue,
+	quantity
+}: IFilterButtonProps) => {
 	const { filter, setFilter } = useTodos()
 
 	const isActive = filterValue === filter
@@ -14,7 +18,7 @@ export const FilterButton = ({ text, filterValue }: IFilterButtonProps) => {
 			type="button"
 			onClick={() => setFilter(filterValue)}
 		>
-			{text}
+			{text} ({quantity})
 		</button>
 	)
 }
